@@ -2,6 +2,8 @@ from agent import Agent
 from tools import CalendarTools, MailTools, TimeTools
 import os
 
+
+
 def load_system_prompt():
     """Load system prompt from separate file."""
     prompt_file = os.path.join(os.path.dirname(__file__), 'system_prompt.txt')
@@ -26,7 +28,7 @@ if __name__ == "__main__":
                   system_prompt=system_prompt)
     #Welcome message
     print("EVA: ")
-    for token in agent.stream_invoke("Hi ! Introduce yourself briefly."):
+    for token in agent.stream_invoke("Hi ! Introduce yourself briefly. Specify i need to say 'bye' to end the chat."):
         print(agent.get_ai_message_token(token), end='', flush=True)
         
     print("\n")
@@ -37,17 +39,14 @@ if __name__ == "__main__":
         print("You: ")
         question = input()
 
-        if question == "Bye":
+        if question.lower() == "bye":
             break
 
         print ("\n")
-        
         print("EVA: ")
         
         for token in agent.stream_invoke(question):
-            
             message_token = agent.get_ai_message_token(token)
-            
             if (message_token is not None):
                 print(message_token, end='', flush=True)
         print("\n")
