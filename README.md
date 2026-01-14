@@ -151,7 +151,7 @@ python ai_chatbot.py
 - **system_prompt.txt**: System instructions for EVA's behavior
 - **requirements.txt**: Python package dependencies
 
-## Environment Variables
+## Google API
 
 The application automatically handles Google API tokens:
 - `calendar_token.json`: Auto-generated after first calendar access
