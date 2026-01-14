@@ -77,13 +77,13 @@ This project uses **Mistral 7B**, a lightweight yet powerful language model that
 ollama pull mistral
 ```
 
-**Why Mistral 7B?**
-- **Low weight**: Only 4GB, suitable for most systems
+**Why qwen3:8b**
+- **Low weight**: Only 5GB, suitable for most systems
 - **Fast inference**: Quick response times for an interactive assistant
 - **Strong performance**: Excellent understanding of instructions and context
 - **Open source**: No external API dependency
 
-**Note**: You're free to use any other Ollama-supported model. Simply replace `mistral` with your preferred model (e.g., `neural-chat`, `llama2`, `dolphin-mixtral`) in the `ai_chatbot.py` configuration.
+**Note**: You're free to use any other Ollama-supported model. Simply replace `qwen3:8b` with your preferred model (e.g., `neural-chat`, `llama2`, `dolphin-mixtral`) in the `ai_chatbot.py` configuration.
 
 ### 3. Clone and Setup the Repository
 
