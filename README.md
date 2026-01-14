@@ -71,13 +71,13 @@ curl -fsSL https://ollama.ai/install.sh | sh
 
 ### 2. Pull the Language Model
 
-This project uses **Mistral 7B**, a lightweight yet powerful language model that offers excellent performance with minimal resource requirements:
+This project uses **Qwen3:8b**, a lightweight yet powerful language model that offers excellent performance with minimal resource requirements:
 
 ```bash
 ollama pull mistral
 ```
 
-**Why qwen3:8b**
+**Why Qwen3:8b**
 - **Low weight**: Only 5GB, suitable for most systems
 - **Fast inference**: Quick response times for an interactive assistant
 - **Strong performance**: Excellent understanding of instructions and context
