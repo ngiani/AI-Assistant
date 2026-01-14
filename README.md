@@ -126,9 +126,13 @@ EVA integrates with Google Calendar and Gmail. You need to authorize it:
    - Place the downloaded `credentials.json` file in the project root directory
    - The app will automatically use it for authentication
 
-4. **Add Your Email:**
-   - Create a file named `email_addres.txt` in the project root
-   - Add your email address (e.g., `your.email@gmail.com`)
+4. **Setup Environment Variables:**
+   - Create a `.env` file in the project root
+   - Add your email address:
+     ```
+     EMAIL_ADDRESS=your.email@gmail.com
+     ```
+   - This file is automatically ignored by git to protect your privacy
 
 ### 5. Run the Application
 
@@ -143,7 +147,7 @@ python ai_chatbot.py
 ## Configuration Files
 
 - **credentials.json**: Your Google OAuth credentials (created in setup step 4)
-- **email_addres.txt**: Your email address for sending emails
+- **.env**: Environment variables including your email address for sending emails
 - **system_prompt.txt**: System instructions for EVA's behavior
 - **requirements.txt**: Python package dependencies
 
@@ -175,7 +179,7 @@ EVA-AI-Assistant/
 ├── system_prompt.txt     # Instructions for the AI agent
 ├── requirements.txt      # Python dependencies
 ├── credentials.json      # Google OAuth credentials (user-added)
-├── email_addres.txt      # User email address (user-added)
+├── .env                  # Environment variables including EMAIL_ADDRESS (user-added)
 └── README.md             # This file
 ```
 
@@ -188,6 +192,10 @@ EVA-AI-Assistant/
 **Google API errors:**
 - Delete the token files (`calendar_token.json`, `gmail_token.json`) and re-authenticate
 - Ensure `credentials.json` is in the project root
+
+**Email not sending:**
+- Verify that the `.env` file exists and contains `EMAIL_ADDRESS=your.email@gmail.com`
+- Ensure the email address is authorized in Google account settings
 
 **Model not found:**
 - Run `ollama pull mistral` to download the model
