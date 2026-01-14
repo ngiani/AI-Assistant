@@ -71,19 +71,19 @@ curl -fsSL https://ollama.ai/install.sh | sh
 
 ### 2. Pull the Language Model
 
-This project uses **Mistral 7B**, a lightweight yet powerful language model that offers excellent performance with minimal resource requirements:
+This project uses **Qwen3:8b**, a lightweight yet powerful language model that offers excellent performance with minimal resource requirements:
 
 ```bash
-ollama pull mistral
+ollama pull qwen3:8b
 ```
 
-**Why Mistral 7B?**
-- **Low weight**: Only 4GB, suitable for most systems
+**Why Qwen3:8b**
+- **Low weight**: Only 5GB, suitable for most systems
 - **Fast inference**: Quick response times for an interactive assistant
 - **Strong performance**: Excellent understanding of instructions and context
 - **Open source**: No external API dependency
 
-**Note**: You're free to use any other Ollama-supported model. Simply replace `mistral` with your preferred model (e.g., `neural-chat`, `llama2`, `dolphin-mixtral`) in the `ai_chatbot.py` configuration.
+**Note**: You're free to use any other Ollama-supported model. Simply replace `qwen3:8b` with your preferred model (e.g., `neural-chat`, `llama2`, `dolphin-mixtral`) in the `ai_chatbot.py` configuration.
 
 ### 3. Clone and Setup the Repository
 
