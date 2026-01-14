@@ -198,7 +198,7 @@ EVA-AI-Assistant/
 - Ensure the email address is authorized in Google account settings
 
 **Model not found:**
-- Run `ollama pull mistral` to download the model
+- Run `ollama pull <model>` to download the model
 - Check available models with `ollama list`
 
 ## License
