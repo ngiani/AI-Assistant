@@ -3,6 +3,7 @@ gmail_token.json
 credentials.json
 email_addres.txt
 run_ai_chatbot.bat
+.env
 __pycache__/
 *.pyc
 .DS_Store

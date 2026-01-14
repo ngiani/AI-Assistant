@@ -1,7 +1,6 @@
 import base64
 import os
 import os.path
-import google.auth
 
 from email.message import EmailMessage
 from google.auth.transport.requests import Request
@@ -14,9 +13,11 @@ from googleapiclient.errors import HttpError
 from langchain.tools import tool
 from datetime import datetime, timedelta
 from dateutil import tz
-import re
 
-import inspect
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Get the directory where this script is located
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -602,14 +603,13 @@ class MailTools(Tools):
             return "Error: Gmail service is not available. Please ensure credentials are properly configured."
         
         try:
-            # Read from address from email_addres.txt
-            try:
-                with open(get_file_path('email_addres.txt'), 'r') as file:
-                    from_ = file.read().strip()
+            # Read from address from environment variable
+            if (load_dotenv()):
+                from_ = os.getenv("EMAIL_ADDRESS")
                 if not from_:
-                    return "Error: Email address file is empty."
-            except FileNotFoundError:
-                return "Error: email_addres.txt file not found. Please create it with your email address."
+                    return "Error: Email address environment variable is not set."
+            else:               
+                return "Error: Could not load .env file."
             
             message = EmailMessage()
             message.set_content(body)
