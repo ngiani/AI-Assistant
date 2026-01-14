@@ -74,7 +74,7 @@ curl -fsSL https://ollama.ai/install.sh | sh
 This project uses **Qwen3:8b**, a lightweight yet powerful language model that offers excellent performance with minimal resource requirements:
 
 ```bash
-ollama pull mistral
+ollama pull qwen3:8b
 ```
 
 **Why Qwen3:8b**
