@@ -25,7 +25,7 @@ REQUIRED PARAMETERS:
   - event_end_date: (string) ISO format YYYY-MM-DDTHH:MM:SS (e.g., "2026-01-20T20:00:00")
 
 OPTIONAL PARAMETERS:
-  - time_zone: (string) Timezone (default "Europe/Rome")
+  - time_zone: (string) Timezone (default "UTC")
   - email_remainder: (integer) Minutes before event for email alert (e.g., 1440 = 1 day, default 0)
   - popup_remainder: (integer) Minutes before event for popup alert (e.g., 60 = 1 hour, default 0)
 
@@ -68,7 +68,7 @@ REQUIRED PARAMETERS (in any order):
 OPTIONAL PARAMETERS:
   - event_location: (string) Where the event takes place
   - event_desc: (string) Event description
-  - time_zone: (string) Timezone (default "Europe/Rome")
+  - time_zone: (string) Timezone (default "UTC")
   - email_remainder: (integer) Minutes before event (e.g., 1440 = 1 day)
   - popup_remainder: (integer) Minutes before event (e.g., 60 = 1 hour)
 
@@ -92,7 +92,7 @@ EXACT EXAMPLE for "Every Tuesday at 7 PM with 1-day reminder":
     "recurrence_rule": "FREQ=WEEKLY;BYDAY=TU",
     "email_remainder": 1440,
     "popup_remainder": 1440,
-    "time_zone": "Europe/Rome"
+    "time_zone": "UTC"
   }
 
 CRITICAL: Parameter name is recurrence_rule (NOT recurrence, NOT frequency)
