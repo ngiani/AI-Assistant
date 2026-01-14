@@ -151,7 +151,7 @@ python ai_chatbot.py
 - **system_prompt.txt**: System instructions for EVA's behavior
 - **requirements.txt**: Python package dependencies
 
-## Environment Variables
+## Google API
 
 The application automatically handles Google API tokens:
 - `calendar_token.json`: Auto-generated after first calendar access
@@ -198,7 +198,7 @@ EVA-AI-Assistant/
 - Ensure the email address is authorized in Google account settings
 
 **Model not found:**
-- Run `ollama pull mistral` to download the model
+- Run `ollama pull <model>` to download the model
 - Check available models with `ollama list`
 
 ## License
