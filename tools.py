@@ -1,6 +1,7 @@
 import base64
 import os
 import os.path
+import subprocess
 
 from email.message import EmailMessage
 from google.auth.transport.requests import Request
@@ -117,6 +118,95 @@ def convert_utc_to_local(utc_str: str) -> str:
 class Tools:
     def get_tools(self):
         pass
+
+class FileSystemTools(Tools):
+    def show_folder_contents_impl(self, folder_path: str) -> str:
+        """Implementation for showing folder contents."""
+        try:
+            items = os.listdir(folder_path)
+            if not items:
+                return "The folder is empty."
+            return "\n".join(items)
+        except FileNotFoundError:
+            return f"Error: The folder '{folder_path}' does not exist."
+        except Exception as e:
+            return f"An error occurred: {str(e)}"
+        
+    def show_folder_contents_tool(self):
+            """Creates a tool wrapper for showing folder contents."""
+            @tool
+            def show_folder_contents(folder_path: str) -> str:
+                """Shows the contents of the specified folder."""
+                return self.show_folder_contents_impl(folder_path)
+            return show_folder_contents
+    
+    def open_file_impl(self, file_path: str) -> str:
+        """Implementation for opening a file with the default application."""
+        try:
+            if os.name == 'nt':  # For Windows
+                os.startfile(file_path)
+            elif os.name == 'posix':  # For macOS and Linux
+                subprocess.run(['open' if sys.platform == 'darwin' else 'xdg-open', file_path])
+            return f"Opened file: {file_path}"
+        except FileNotFoundError:
+            return f"Error: The file '{file_path}' does not exist."
+        except Exception as e:
+            return f"An error occurred: {str(e)}"
+    def open_file_tool(self):
+            """Creates a tool wrapper for opening a file."""
+            @tool
+            def open_file(file_path: str) -> str:
+                """Opens the specified file with the default application."""
+                return self.open_file_impl(file_path)
+            return open_file
+        
+    def remove_file_impl(self, file_path: str) -> str:
+        """Implementation for removing a file."""
+        try:
+            os.remove(file_path)
+            return f"Removed file: {file_path}"
+        except FileNotFoundError:
+            return f"Error: The file '{file_path}' does not exist."
+        except Exception as e:
+            return f"An error occurred: {str(e)}"
+        
+    def remove_file_tool(self):
+            """Creates a tool wrapper for removing a file."""
+            @tool
+            def remove_file(file_path: str) -> str:
+                """Removes the specified file."""
+                return self.remove_file_impl(file_path)
+            return remove_file
+        
+    def remove_folder_impl(self, folder_path: str) -> str:
+        """Implementation for removing a folder."""
+        try:
+            os.rmdir(folder_path)
+            return f"Removed folder: {folder_path}"
+        except FileNotFoundError:
+            return f"Error: The folder '{folder_path}' does not exist."
+        except OSError as e:
+            return f"Error: The folder '{folder_path}' is not empty or cannot be removed. {str(e)}"
+        except Exception as e:
+            return f"An error occurred: {str(e)}"
+    def remove_folder_tool(self):
+            """Creates a tool wrapper for removing a folder."""
+            @tool
+            def remove_folder(folder_path: str) -> str:
+                """Removes the specified folder."""
+                return self.remove_folder_impl(folder_path)
+            return remove_folder
+    def get_tools(self):
+        """
+        Returns a list of tool callables as standalone functions (not methods).
+        """
+        return [
+            self.show_folder_contents_tool(),
+            self.open_file_tool(),
+            self.remove_file_tool(),
+            self.remove_folder_tool()
+        ]
+
 
 class TimeTools(Tools):
     

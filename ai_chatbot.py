@@ -1,5 +1,5 @@
 from agent import Agent
-from tools import CalendarTools, MailTools, TimeTools
+from tools import CalendarTools, MailTools, TimeTools, FileSystemTools
 import os
 
 
@@ -12,19 +12,20 @@ def load_system_prompt():
             return f.read()
     except FileNotFoundError:
         print(f"Warning: system_prompt.txt not found at {prompt_file}")
-        return "You are a helpful assistant called Eva that can manage calendar events and send emails."
+        return "You are a helpful assistant called Eva that can manage calendar events, send emails, and handle file system operations."
 
 if __name__ == "__main__":
     
     calendar_tools = CalendarTools()
     mail_tools  = MailTools()
     time_tools = TimeTools()
+    file_system_tools = FileSystemTools()
     
     # Load system prompt from file
     system_prompt = load_system_prompt()
     
     agent = Agent(model="qwen3:8b", 
-                  tools=calendar_tools.get_tools() + mail_tools.get_tools() + time_tools.get_tools(),
+                  tools=calendar_tools.get_tools() + mail_tools.get_tools() + time_tools.get_tools() + file_system_tools.get_tools(),
                   system_prompt=system_prompt)
     #Welcome message
     print("EVA: ")
