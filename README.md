@@ -147,7 +147,7 @@ python ai_chatbot.py
 ## Configuration Files
 
 - **credentials.json**: Your Google OAuth credentials (created in setup step 4)
-- **.env**: Environment variables including your email address for sending emails
+- **.env**: Environment variables including your email address for sending emails (to be added by the user)
 - **system_prompt.txt**: System instructions for EVA's behavior
 - **requirements.txt**: Python package dependencies
 
