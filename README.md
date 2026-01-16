@@ -47,9 +47,6 @@ The agent uses **Ollama** for running the language model locally, ensuring priva
 - **read_file**: Read and display file contents
   - Example: "Read my notes from the latest meeting"
 
-- **write_file**: Create or overwrite files with content
-  - Example: "Save this document as my_file.txt"
-
 - **delete_file**: Remove files from the system
   - Example: "Delete the old backup file"
 
