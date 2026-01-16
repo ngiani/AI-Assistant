@@ -41,23 +41,20 @@ The agent uses **Ollama** for running the language model locally, ensuring priva
   - Example: "Send an email to john@example.com about the project deadline"
 
 ### File System Tools
-- **show_folder_contents**: List the contents of a specified folder
-  - Parameters: folder path
-  - Example: "Show me what's in the Documents folder"
+- **list_directory**: Browse files and folders in a directory
+  - Example: "List files in my documents folder"
 
-- **open_file**: Open a file with the default application
-  - Parameters: file path
-  - Example: "Open the report.pdf file"
+- **read_file**: Read and display file contents
+  - Example: "Read my notes from the latest meeting"
 
-- **remove_file**: Delete a specified file
-  - Parameters: file path
+- **write_file**: Create or overwrite files with content
+  - Example: "Save this document as my_file.txt"
+
+- **delete_file**: Remove files from the system
   - Example: "Delete the old backup file"
 
-- **remove_folder**: Remove an empty folder
-  - Parameters: folder path
-  - Example: "Remove the temporary folder"
+**⚠️ Administrator Rights Required**: To access protected system files and directories, EVA must be run with administrator privileges. On Windows, right-click on your terminal/PowerShell and select "Run as administrator" before launching the application.
 
-**⚠️ Important:** To access protected files and folders, the application must be run with **administrator rights**. Without admin privileges, you will encounter permission errors when trying to access system files or folders in protected directories (e.g., Program Files, Windows directories, user protected folders).
 
 ### Utility Tools
 - **get_current_time**: Retrieve the current date and time for accurate scheduling
@@ -67,7 +64,7 @@ The agent uses **Ollama** for running the language model locally, ensuring priva
 ### Prerequisites
 - Python 3.8 or higher
 - Git
-- Administrator access (for Ollama installation on Windows and for accessing protected files/folders)
+- Administrator access (for Ollama installation on Windows)
 
 ### 1. Install Ollama
 
@@ -166,7 +163,7 @@ python ai_chatbot.py
 ## Configuration Files
 
 - **credentials.json**: Your Google OAuth credentials (created in setup step 4)
-- **.env**: Environment variables including your email address for sending emails
+- **.env**: Environment variables including your email address for sending emails (to be added by the user)
 - **system_prompt.txt**: System instructions for EVA's behavior
 - **requirements.txt**: Python package dependencies
 
@@ -203,11 +200,6 @@ EVA-AI-Assistant/
 ```
 
 ## Troubleshooting
-
-**File system tool permission errors:**
-- If you encounter "Access Denied" or permission errors when using file system tools, the application needs to be run with **administrator rights**
-- Right-click the terminal or command prompt and select "Run as Administrator" before running the chatbot
-- This is required for accessing protected files or folders in system directories
 
 **Ollama not connecting:**
 - Ensure Ollama is running: `ollama serve`
