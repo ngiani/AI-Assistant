@@ -40,6 +40,22 @@ The agent uses **Ollama** for running the language model locally, ensuring priva
   - Parameters: recipient email, subject, body
   - Example: "Send an email to john@example.com about the project deadline"
 
+### File System Tools
+- **list_directory**: Browse files and folders in a directory
+  - Example: "List files in my documents folder"
+
+- **read_file**: Read and display file contents
+  - Example: "Read my notes from the latest meeting"
+
+- **write_file**: Create or overwrite files with content
+  - Example: "Save this document as my_file.txt"
+
+- **delete_file**: Remove files from the system
+  - Example: "Delete the old backup file"
+
+**⚠️ Administrator Rights Required**: To access protected system files and directories, EVA must be run with administrator privileges. On Windows, right-click on your terminal/PowerShell and select "Run as administrator" before launching the application.
+
+
 ### Utility Tools
 - **get_current_time**: Retrieve the current date and time for accurate scheduling
 
