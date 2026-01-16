@@ -12,6 +12,7 @@ from langchain.messages import AIMessageChunk
 class Agent():
     
     def __init__(self, model, tools, system_prompt):
+     
         self.llm = ChatOllama(
             model=model, 
             temperature=0,
