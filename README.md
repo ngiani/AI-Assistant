@@ -8,6 +8,7 @@ AI Assistant is designed to streamline your productivity by providing natural la
 - **Calendar Management**: Create one-time and recurring events with intelligent date parsing
 - **Email Management**: Send emails directly from natural language commands
 - **Smart Scheduling**: Understand relative dates like "next Tuesday" or "tomorrow" and convert them to proper calendar entries
+- **File system**: Show content of specified directory, open files, and remove files/folders
 
 The assistant uses an agentic architecture with LangChain and LangGraph to process user commands and execute tools intelligently, making your scheduling and communication effortless.
 
