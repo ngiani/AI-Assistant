@@ -3,6 +3,7 @@ import mimetypes
 import os
 import os.path
 import subprocess
+import sys
 
 from email.message import EmailMessage
 from google.auth.transport.requests import Request
