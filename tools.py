@@ -1,4 +1,5 @@
 import base64
+import mimetypes
 import os
 import os.path
 import subprocess
@@ -10,109 +11,22 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
+from email.message import EmailMessage
+from email.mime.audio import MIMEAudio
+from email.mime.base import MIMEBase
+from email.mime.image import MIMEImage
+from email.mime.text import MIMEText
+
 
 from langchain.tools import tool
 from datetime import datetime, timedelta
 from dateutil import tz
 
 from dotenv import load_dotenv
+from utils import get_file_path, resolve_relative_date, build_file_part
 
 # Load environment variables from .env file
 load_dotenv()
-
-# Get the directory where this script is located
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-
-def get_file_path(filename):
-    """Get absolute path to a file in the script directory."""
-    return os.path.join(SCRIPT_DIR, filename)
-
-def resolve_relative_date(date_str: str, current_date_str: str = None) -> str:
-    """
-    Converts relative date references like 'tomorrow', 'today', 'next week' to absolute dates.
-    If the date is already in a specific format, returns it as-is (preserving time if present).
-    Returns date in YYYY-MM-DD format (or YYYY-MM-DDTHH:MM:SS if time was in original).
-    
-    Args:
-        date_str: The date string to resolve (can be relative like 'tomorrow' or absolute like '2024-01-15' or '2024-01-15T10:00:00')
-        current_date_str: Optional current date string in format 'YYYY-MM-DD HH:MM:SS' (already in local time). If provided, used as reference point.
-    """
-    date_lower = date_str.lower().strip()
-    
-    # Check if date_str contains time information
-    has_time = 'T' in date_str or ' ' in date_str
-    time_part = ""
-    if has_time and 'T' in date_str:
-        time_part = date_str.split('T')[1]
-    
-    # Parse current_date_str if provided, otherwise use system time
-    if current_date_str:
-        try:
-            today = datetime.strptime(current_date_str, "%Y-%m-%d %H:%M:%S").date()
-        except ValueError:
-            # If format doesn't match, try just the date part
-            try:
-                today = datetime.strptime(current_date_str, "%Y-%m-%d").date()
-            except ValueError:
-                today = datetime.now().date()
-    else:
-        today = datetime.now().date()
-    
-    # Helper to format date with optional time
-    def format_with_time(date_obj, time_str=""):
-        if time_str:
-            return f"{date_obj.strftime('%Y-%m-%d')}T{time_str}"
-        return date_obj.strftime("%Y-%m-%d")
-    
-    # Handle common relative date references
-    if date_lower == 'today':
-        return format_with_time(today, time_part)
-    elif date_lower == 'tomorrow':
-        return format_with_time(today + timedelta(days=1), time_part)
-    elif date_lower == 'yesterday':
-        return format_with_time(today - timedelta(days=1), time_part)
-    elif date_lower == 'next week':
-        return format_with_time(today + timedelta(weeks=1), time_part)
-    elif date_lower == 'next month':
-        return format_with_time(today + timedelta(days=30), time_part)
-    elif 'tomorrow' in date_lower or 'today' in date_lower or 'yesterday' in date_lower:
-        # Handle cases like "tomorrow at 3pm" or "today morning"
-        # Try to extract relative date and return with time if it was present
-        if 'tomorrow' in date_lower:
-            return format_with_time(today + timedelta(days=1), time_part)
-        elif 'today' in date_lower:
-            return format_with_time(today, time_part)
-        elif 'yesterday' in date_lower:
-            return format_with_time(today - timedelta(days=1), time_part)
-    
-    # If it doesn't match relative dates, return as-is
-    return date_str
-
-def convert_utc_to_local(utc_str: str) -> str:
-    """Converts a UTC date-time string to local time zone datetime object."""
-    from_zone = tz.tzutc()
-    to_zone = tz.tzlocal()
-    
-    # Handle ISO format strings (e.g., '2026-01-15T15:00:00' or '2026-01-15t15:00:00')
-    utc_str_normalized = utc_str.replace('t', 'T').replace('Z', '').strip()
-    
-    # Try multiple date formats
-    formats = ["%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"]
-    utc = None
-    for fmt in formats:
-        try:
-            utc = datetime.strptime(utc_str_normalized, fmt)
-            break
-        except ValueError:
-            continue
-    
-    if utc is None:
-        raise ValueError(f"Unable to parse date string: {utc_str}")
-    
-    #utc = utc.replace(tzinfo=from_zone)
-    local_time = utc.astimezone(to_zone)
-    
-    return local_time.strftime("%Y-%m-%d %H:%M:%S")
 
 #Abstract tools class to define common behavior for all tool
 class Tools:
@@ -122,13 +36,15 @@ class Tools:
 class FileSystemTools(Tools):
     def show_folder_contents_impl(self, folder_path: str) -> str:
         """Implementation for showing folder contents."""
+        if not os.path.exists(folder_path):
+            return f"Error: The folder '{folder_path}' does not exist."
+        if not os.path.isdir(folder_path):
+            return f"Error: '{folder_path}' is not a directory."
         try:
             items = os.listdir(folder_path)
             if not items:
                 return "The folder is empty."
             return "\n".join(items)
-        except FileNotFoundError:
-            return f"Error: The folder '{folder_path}' does not exist."
         except Exception as e:
             return f"An error occurred: {str(e)}"
         
@@ -318,7 +234,8 @@ class CalendarTools(Tools):
             event['reminders'] = {'useDefault': True}
         
         event = self.calendar_service.events().insert(calendarId='primary', body=event).execute()
-        return f"Event created: {event.get('htmlLink')}"
+        event_id = event.get('id')
+        return f"Event created: {event.get('htmlLink')}|EVENT_ID:{event_id}"
     
     def _add_event_to_calendar_tool(self):
         """Creates a tool wrapper for adding an event to the calendar."""
@@ -328,7 +245,7 @@ class CalendarTools(Tools):
                                 event_desc:str, 
                                 event_start_date: str, 
                                 event_end_date:str,
-                                time_zone:str = "Europe/Rome",
+                                time_zone:str = "UTC",
                                 email_remainder:int = 0,
                                 popup_remainder:int = 0,
                                 current_date: str = None) -> str:
@@ -391,7 +308,8 @@ class CalendarTools(Tools):
             event['reminders'] = {'useDefault': True}
         
         event = self.calendar_service.events().insert(calendarId='primary', body=event).execute()
-        return f"Recurrent Event created: {event.get('htmlLink')}"
+        event_id = event.get('id')
+        return f"Recurrent Event created: {event.get('htmlLink')}|EVENT_ID:{event_id}"
     
     def _validate_and_normalize_rrule(self, rrule: str) -> tuple[bool, str]:
         """Validates and normalizes an RRULE string for Google Calendar API.
@@ -402,6 +320,7 @@ class CalendarTools(Tools):
         Returns:
             Tuple of (is_valid, normalized_rrule_or_error_message)
         """
+        
         if not rrule:
             return False, "RRULE cannot be empty"
         
@@ -469,7 +388,7 @@ class CalendarTools(Tools):
                                             recurrence_rule: str,
                                             event_location: str = "",
                                             event_desc: str = "",
-                                            time_zone: str = "Europe/Rome",
+                                            time_zone: str = "UTC",
                                             email_remainder: int = 0,
                                             popup_remainder: int = 0,
                                             current_date: str = None) -> str:
@@ -556,22 +475,25 @@ class CalendarTools(Tools):
         start_of_day = f"{date}T00:00:00Z"
         end_of_day = f"{date}T23:59:59Z"
         
-        events_result = self.calendar_service.events().list(calendarId='primary', 
-                                                            timeMin=start_of_day,
-                                                            timeMax=end_of_day,
-                                                            singleEvents=True,
-                                                            orderBy='startTime').execute()
-        events = events_result.get('items', [])
-        
-        if not events:
-            return f'No events found on {date}.'
-        
-        event_list = []
-        for event in events:
-            start = event['start'].get('dateTime', event['start'].get('date'))
-            event_list.append(f"{start} - {event['summary']} - ID: {event['id']}")
-        
-        return "\n".join(event_list)
+        try:
+            events_result = self.calendar_service.events().list(calendarId='primary', 
+                                                                timeMin=start_of_day,
+                                                                timeMax=end_of_day,
+                                                                singleEvents=True,
+                                                                orderBy='startTime').execute()
+            events = events_result.get('items', [])
+            
+            if not events:
+                return f'No events found on {date}.'
+            
+            event_list = []
+            for event in events:
+                start = event['start'].get('dateTime', event['start'].get('date'))
+                event_list.append(f"{start} - {event['summary']} - ID: {event['id']}")
+            
+            return "\n".join(event_list)
+        except Exception as error:
+            return f"An error occurred: {error}"
     
     def _get_events_on_date_tool(self):
         """Creates a tool wrapper for retrieving events on a specific date from the calendar."""
@@ -628,7 +550,7 @@ class CalendarTools(Tools):
             
             updated_event = self.calendar_service.events().update(calendarId='primary', eventId=event_id, body=event).execute()
             return f"Event updated: {updated_event.get('htmlLink')}"
-        except HttpError as error:
+        except Exception as error:
             return f"An error occurred: {error}"
         
     def _modify_event_tool(self):
@@ -651,9 +573,7 @@ class CalendarTools(Tools):
                                             resolved_start, resolved_end, time_zone,
                                             email_reminder, popup_reminder)
         return modify_event
-            
-            
-            
+ 
 class MailTools(Tools):
     def __init__(self):
         self.mail_service = self.get_mail_service()
@@ -686,50 +606,166 @@ class MailTools(Tools):
         except HttpError as error:
             print(f'An error occurred: {error}')
             return None
+       
+    def draft_message_impl(self, to: str, subject: str, body: str) -> dict:
+        """Creates a draft email message. """
+        from_ = os.getenv("EMAIL_ADDRESS")
+        if not from_:
+            raise ValueError("Email address environment variable is not set.")
         
-    def send_email_impl(self, to: str, subject: str, body: str) -> str:
+        message = EmailMessage()
+        message.set_content(body)
+        message["To"] = to
+        message["From"] = from_
+        message["Subject"] = subject
+
+        # encoded message
+        encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
+
+        return encoded_message
+    def draft_message_tool(self):
+        """Creates a tool wrapper for drafting an email."""
+        @tool
+        def draft_message(to: str, subject: str, body: str) -> dict:
+            """Creates a draft email message. The sender address is read from email_addres.txt."""
+            return self.draft_message_impl(to, subject, body)
+        return draft_message
+     
+    def send_message_impl(self, to: str, subject: str, body: str) -> str:
         """Sends an email using the Gmail API."""
         if self.mail_service is None:
             return "Error: Gmail service is not available. Please ensure credentials are properly configured."
         
+        # Validate email address format
+        import re
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, to):
+            return f"Error: Invalid email address format: {to}"
+        
         try:
             # Read from address from environment variable
-            if (load_dotenv()):
-                from_ = os.getenv("EMAIL_ADDRESS")
-                if not from_:
-                    return "Error: Email address environment variable is not set."
-            else:               
-                return "Error: Could not load .env file."
+            from_ = os.getenv("EMAIL_ADDRESS")
+            if not from_:
+                return "Error: Email address environment variable is not set."
             
             message = EmailMessage()
-            message.set_content(body)
             message["To"] = to
             message["From"] = from_
             message["Subject"] = subject
+            message.set_content(body)
 
             # encoded message
             encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
 
             create_message = {"raw": encoded_message}
-            # pylint: disable=E1101
-            send_message = (
-                self.mail_service.users()
-                .messages()
-                .send(userId="me", body=create_message)
-                .execute()
-            )
-        except HttpError as error:
-            return f"An error occurred: {error}"
+
+            # send message to user identified by to
+            self.mail_service.users().messages().send(userId="me", body=create_message).execute()
+        except Exception as e:
+            return f"An unexpected error occurred: {str(e)}"
         
         return "Email sent successfully to " + to
     
-    def send_email_tool(self):
+    def send_message_tool(self):
         """Creates a tool wrapper for sending an email."""
         @tool
-        def send_email(to: str, subject: str, body: str) -> str:
-            """Sends an email using the Gmail API. The sender address is read from email_addres.txt."""
-            return self.send_email_impl(to, subject, body)
-        return send_email
+        def send_message(to: str, subject: str, body: str) -> str:
+            """Sends an email using the Gmail API. The sender address is read from .env file."""
+            return self.send_message_impl(to, subject, body)
+        return send_message
+    
+    def draft_message_with_attachment_impl(self, to: str, subject: str, body: str, file_paths: list[str]) -> dict:
+        """Creates a message with attachments. If multiple files are provided, they will all be attached.
+
+        Args:
+            to: The recipient's email address.
+            subject: The subject of the email.
+            body: The body text of the email.
+            file_paths: A list of file paths to attach.
+
+        Returns:
+            A dictionary representing the message.
+        """
+        from_ = os.getenv("EMAIL_ADDRESS")
+        if not from_:
+            raise ValueError("Email address environment variable is not set.")
+        
+        message = EmailMessage()
+        message["To"] = to
+        message["From"] = from_
+        message["Subject"] = subject
+        message.set_content(body)
+
+        try :
+            for file_path in file_paths:
+                part = build_file_part(file_path)
+                message.add_attachment(part.get_payload(decode=True), maintype=part.get_content_maintype(),
+                                    subtype=part.get_content_subtype(), filename=part.get_filename())
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Attachment file not found: {file_path}")
+
+        encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
+        return encoded_message
+    
+    def draft_message_with_attachment_tool(self):
+        """Creates a tool wrapper for creating a message with attachments."""
+        @tool
+        def draft_message_with_attachment_tool(to: str, subject: str, body: str, file_paths: list[str]) -> dict:
+            """Creates a message with attachments."""
+            return self.draft_message_with_attachment_impl(to, subject, body, file_paths)
+        return draft_message_with_attachment_tool
+    
+    def send_message_with_attachment_impl(self, to: str, subject: str, body: str, file_paths: list[str]) -> str:
+        """Sends an email with attachments using the Gmail API."""
+        if self.mail_service is None:
+            return "Error: Gmail service is not available. Please ensure credentials are properly configured."
+        
+        # Validate email address format
+        import re
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, to):
+            return f"Error: Invalid email address format: {to}"
+        
+        # Read from address from environment variable
+        from_ = os.getenv("EMAIL_ADDRESS")
+        if not from_:
+            return "Error: Email address environment variable is not set."
+        
+        message = EmailMessage()
+        message.set_content(body)
+        message["To"] = to
+        message["From"] = from_
+        message["Subject"] = subject
+        message.set_content(body)
+
+        try:
+            for file_path in file_paths:
+                
+                part = build_file_part(file_path)
+                message.add_attachment(part.get_payload(decode=True), maintype=part.get_content_maintype(),
+                                    subtype=part.get_content_subtype(), filename=part.get_filename())
+            
+            # encoded message
+            encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
+
+            create_message = {"raw": encoded_message}
+            # pylint: disable=E1101
+            self.mail_service.users().messages().send(userId="me", body=create_message).execute()
+ 
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Attachment file not found: {file_path}")
+        except Exception as error:
+            return f"An error occurred: {error}"
+        
+        return "Email with attachment sent successfully to " + to
+    
+    def send_message_with_attachment_tool(self):
+        """Creates a tool wrapper for sending an email with attachments."""
+        @tool
+        def send_message_with_attachment(to: str, subject: str, body: str, file_paths: list[str]) -> str:
+            """Sends an email with attachments using the Gmail API."""
+            return self.send_message_with_attachment_impl(to, subject, body, file_paths)
+        return send_message_with_attachment
     
     def get_latest_emails_impl(self, count: int) -> str:
         """Implementation for retrieving the latest {count} emails from the inbox with."""
@@ -769,6 +805,9 @@ class MailTools(Tools):
         Returns a list of tool callables as standalone functions (not methods).
         """
         return [
-            self.send_email_tool(),
-            self.get_latest_emails_tool()
+            self.get_latest_emails_tool(), 
+            self.send_message_tool(),
+            self.draft_message_tool(),
+            self.draft_message_with_attachment_tool(),
+            self.send_message_with_attachment_tool()
         ]
