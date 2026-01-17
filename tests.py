@@ -13,6 +13,9 @@ class TestEmailTools(TestCase):
     # Here you would set up your tool and mock any external dependencies
     @classmethod
     def setUpClass(cls):
+        # Set a test email address if not already set
+        if "EMAIL_ADDRESS" not in os.environ:
+            os.environ["EMAIL_ADDRESS"] = "test@example.com"
         with patch.object(MailTools, 'get_mail_service', return_value=MagicMock()):
             cls.tool = MailTools() 
     
