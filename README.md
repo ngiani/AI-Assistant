@@ -1,10 +1,10 @@
-# AI-Assitant AI Assistant
+# AI Assistant
 
 A personal AI assistant that intelligently manages your calendar events and emails using advanced language models and Google APIs integration.
 
 ## Purpose
 
-AI-Assitant is designed to streamline your productivity by providing natural language interaction for:
+AI Assistant is designed to streamline your productivity by providing natural language interaction for:
 - **Calendar Management**: Create one-time and recurring events with intelligent date parsing
 - **Email Management**: Send emails directly from natural language commands
 - **Smart Scheduling**: Understand relative dates like "next Tuesday" or "tomorrow" and convert them to proper calendar entries
@@ -13,7 +13,7 @@ The assistant uses an agentic architecture with LangChain and LangGraph to proce
 
 ## The Agent
 
-AI-Assitant is built using **LangChain** and **LangGraph**, which enables:
+AI Assistant is built using **LangChain** and **LangGraph**, which enables:
 - **Agentic workflow**: The AI agent can decide which tools to use based on user input
 - **Tool calling**: Seamlessly integrates with Google Calendar and Gmail APIs
 - **In-memory checkpointing**: Maintains conversation state across interactions
@@ -50,7 +50,7 @@ The agent uses **Ollama** for running the language model locally, ensuring priva
 - **delete_file**: Remove files from the system
   - Example: "Delete the old backup file"
 
-**⚠️ Administrator Rights Required**: To access protected system files and directories, AI-Assitant must be run with administrator privileges. On Windows, right-click on your terminal/PowerShell and select "Run as administrator" before launching the application.
+**⚠️ Administrator Rights Required**: To access protected system files and directories, AI Assistant must be run with administrator privileges. On Windows, right-click on your terminal/PowerShell and select "Run as administrator" before launching the application.
 
 
 ### Utility Tools
@@ -102,8 +102,8 @@ ollama pull qwen3:8b
 
 ```bash
 # Clone the repository
-git clone https://github.com/ngiani/AI-Assitant-AI assistant.git
-cd AI-Assitant-AI assistant
+git clone https://github.com/ngiani/AI-Assitant.git
+cd AI-Assistant
 
 # Create a virtual environment
 python -m venv venv
@@ -120,11 +120,11 @@ pip install -r requirements.txt
 
 ### 4. Setup Google Authentication
 
-AI-Assitant integrates with Google Calendar and Gmail. You need to authorize it:
+AI-Assistant integrates with Google Calendar and Gmail. You need to authorize it:
 
 1. **Create a Google Cloud Project:**
    - Go to [Google Cloud Console](https://console.cloud.google.com/)
-   - Create a new project (e.g., "AI-Assitant Assistant")
+   - Create a new project (e.g., "AI-Assistant")
    - Enable the following APIs:
      - Google Calendar API
      - Gmail API
@@ -185,7 +185,7 @@ These files are in `.gitignore` to protect your privacy.
 ## Project Structure
 
 ```
-AI-Assitant-AI assistant/
+AI-Assistant/
 ├── agent.py              # Agent implementation using LangChain
 ├── tools.py              # Calendar and email tools
 ├── ai_chatbot.py         # Main chatbot interface
@@ -220,4 +220,4 @@ This project is open source and available under the MIT License.
 
 ## Contributing
 
-Feel free to fork, modify, and improve AI-Assitant for your needs!
+Feel free to fork, modify, and improve AI-Assistant for your needs!
