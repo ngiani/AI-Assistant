@@ -61,7 +61,8 @@ class Agent():
     def get_human_message(self, response):
         for message in response['messages']:
             if isinstance(message, HumanMessage):
-                return message.content
+                if message.content != "":
+                    return message.content
         return ""
     
     
