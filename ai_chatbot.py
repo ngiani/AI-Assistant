@@ -12,7 +12,7 @@ def load_system_prompt():
             return f.read()
     except FileNotFoundError:
         print(f"Warning: system_prompt.txt not found at {prompt_file}")
-        return "You are a helpful assistant called Eva that can manage calendar events, send emails, and handle file system operations."
+        return "You are a helpful assistant called AI-Assitant that can manage calendar events, send emails, and handle file system operations."
 
 if __name__ == "__main__":
     
@@ -28,7 +28,7 @@ if __name__ == "__main__":
                   tools=calendar_tools.get_tools() + mail_tools.get_tools() + time_tools.get_tools() + file_system_tools.get_tools(),
                   system_prompt=system_prompt)
     #Welcome message
-    print("EVA: ")
+    print("AI Assistant: ")
     for token in agent.stream_invoke("Hi ! Introduce yourself briefly. Specify i need to say 'bye' to end the chat."):
         print(agent.get_ai_message_token(token), end='', flush=True)
         
@@ -44,7 +44,7 @@ if __name__ == "__main__":
             break
 
         print ("\n")
-        print("EVA: ")
+        print("AI-Assitant: ")
         
         for token in agent.stream_invoke(question):
             message_token = agent.get_ai_message_token(token)
