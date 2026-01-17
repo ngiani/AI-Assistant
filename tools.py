@@ -59,14 +59,16 @@ class FileSystemTools(Tools):
     
     def open_file_impl(self, file_path: str) -> str:
         """Implementation for opening a file with the default application."""
+        # Check if file exists first
+        if not os.path.exists(file_path):
+            return f"Error: The file '{file_path}' does not exist."
+        
         try:
             if os.name == 'nt':  # For Windows
                 os.startfile(file_path)
             elif os.name == 'posix':  # For macOS and Linux
                 subprocess.run(['open' if sys.platform == 'darwin' else 'xdg-open', file_path])
             return f"Opened file: {file_path}"
-        except FileNotFoundError:
-            return f"Error: The file '{file_path}' does not exist."
         except Exception as e:
             return f"An error occurred: {str(e)}"
     def open_file_tool(self):
