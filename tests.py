@@ -11,7 +11,10 @@ import os
 class TestEmailTools(TestCase):
     
     # Here you would set up your tool and mock any external dependencies
-    tool = MailTools() 
+    @classmethod
+    def setUpClass(cls):
+        with patch.object(MailTools, 'get_mail_service', return_value=MagicMock()):
+            cls.tool = MailTools() 
     
     def test_send_message_attachments_impl(self):
         
@@ -152,7 +155,10 @@ class TestEmailTools(TestCase):
 
 class TestCalendarTools(TestCase):
     
-    tool = CalendarTools()
+    @classmethod
+    def setUpClass(cls):
+        with patch.object(CalendarTools, 'get_calendar_service', return_value=MagicMock()):
+            cls.tool = CalendarTools()
     
     def test_add_event_impl(self):
         with patch.object(self.tool, 'calendar_service') as mock_service:
