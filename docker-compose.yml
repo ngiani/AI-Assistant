@@ -1,0 +1,53 @@
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            capabilities: ["gpu"]
+            count: all
+    container_name: ollama-daemon
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - ai_network
+
+  ai_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: eva-chatbot-app
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+    volumes:
+      - ./:/app
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    ports:
+      - 8081:8081
+    networks:
+      - ai_network
+
+volumes:
+  ollama_data:
+
+networks:
+  ai_network:
+    driver: bridge
