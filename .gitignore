@@ -7,3 +7,4 @@ run_ai_chatbot.bat
 __pycache__/
 *.pyc
 .DS_Store
+ollama_data/
