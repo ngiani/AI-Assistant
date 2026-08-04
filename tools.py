@@ -252,9 +252,9 @@ class CalendarTools(Tools):
                                 email_remainder:int = 0,
                                 popup_remainder:int = 0,
                                 current_date: str = None) -> str:
-            """Adds a one-time event to the calendar. For relative dates ('tomorrow', 'next week'), call get_current_time
-            first and pass its result as current_date ('YYYY-MM-DD HH:MM:SS'). Dates must be ISO format with time,
-            e.g. '2024-01-15T10:00:00'."""
+            """Adds a one-time event to the calendar. ALWAYS call get_current_time first (including for 'today') and pass
+            its result as current_date ('YYYY-MM-DD HH:MM:SS') - never assume today's date from memory. Dates must be
+            ISO format with time, e.g. 'YYYY-MM-DDTHH:MM:SS'."""
             # Resolve relative dates using the provided current_date
             resolved_start = resolve_relative_date(event_start_date, current_date)
             resolved_end = resolve_relative_date(event_end_date, current_date)
@@ -392,9 +392,9 @@ class CalendarTools(Tools):
                                             email_remainder: int = 0,
                                             popup_remainder: int = 0,
                                             current_date: str = None) -> str:
-            """Adds a recurring event using recurrence_rule (e.g. 'FREQ=WEEKLY;BYDAY=TU'; no WKST). For relative dates,
-            call get_current_time first and pass its result as current_date ('YYYY-MM-DD HH:MM:SS'). Dates must be
-            ISO format with time, e.g. '2026-01-20T19:00:00'."""
+            """Adds a recurring event using recurrence_rule (e.g. 'FREQ=WEEKLY;BYDAY=TU'; no WKST). ALWAYS call
+            get_current_time first (including for 'today') and pass its result as current_date ('YYYY-MM-DD HH:MM:SS') -
+            never assume today's date from memory. Dates must be ISO format with time, e.g. 'YYYY-MM-DDTHH:MM:SS'."""
             
             # Validate and normalize recurrence rule
             is_valid, result = self._validate_and_normalize_rrule(recurrence_rule)
@@ -535,9 +535,10 @@ class CalendarTools(Tools):
         def modify_event(event_id: str, summary: str = None, description: str = None, location: str = None,
                         start_date: str = None, end_date: str = None, time_zone: str = None,
                         email_reminder: int = None, popup_reminder: int = None, current_date: str = None) -> str:
-            """Modifies an event in the calendar; provide event_id and only the fields to update. For relative dates,
-            call get_current_time first and pass its result as current_date ('YYYY-MM-DD HH:MM:SS'). start_date/end_date
-            must be ISO format with time; reminders are in minutes."""
+            """Modifies an event in the calendar; provide event_id and only the fields to update. If updating dates,
+            ALWAYS call get_current_time first (including for 'today') and pass its result as current_date
+            ('YYYY-MM-DD HH:MM:SS') - never assume today's date from memory. start_date/end_date must be ISO format
+            with time; reminders are in minutes."""
             # Resolve relative dates using the provided current_date
             resolved_start = resolve_relative_date(start_date, current_date) if start_date else None
             resolved_end = resolve_relative_date(end_date, current_date) if end_date else None

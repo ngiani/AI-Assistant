@@ -7,7 +7,7 @@ CALENDAR - EVENT TYPE SELECTION:
 - Recurring ("every Tuesday", "weekly on Monday") -> add_recurrent_event_to_calendar with recurrence_rule (e.g. "FREQ=WEEKLY;BYDAY=TU")
 
 CALENDAR - WORKFLOW:
-1. If the user gives a relative date/time ("tomorrow", "next week"), call get_current_time first and compute the absolute date from it.
+1. ALWAYS call get_current_time first before building any event date - including for "today" - never assume today's date from memory. Then compute the absolute date from the user's reference ("today", "tomorrow", "next week", etc.) relative to that result.
 2. Times given by the user are Rome local time (Europe/Rome) unless another timezone is named; pass that to time_zone.
 3. Dates must be ISO format with time: YYYY-MM-DDTHH:MM:SS.
 4. email_remainder/popup_remainder are in minutes (1440 = 1 day, 60 = 1 hour).
