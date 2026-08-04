@@ -1,6 +1,7 @@
 from agent import Agent
 from tools import CalendarTools, MailTools, TimeTools, FileSystemTools
 import os
+import uuid
 
 import asyncio
 from websockets.asyncio.server import serve
@@ -29,6 +30,10 @@ async def main():
         await server.serve_forever()
         
 async def handler(websocket):
+    # One thread_id per connection so the agent keeps conversation history across turns
+    # (e.g. remembers the event being discussed when the user replies to a follow-up question).
+    thread_id = str(uuid.uuid4())
+
     #Chat loop
     while True:
 
@@ -44,7 +49,7 @@ async def handler(websocket):
 
         # Run the blocking generation in a thread so the event loop stays free to answer keepalive pings
         try:
-            complete_answer = await asyncio.to_thread(_collect_agent_response, question)
+            complete_answer = await asyncio.to_thread(_collect_agent_response, question, thread_id)
         except Exception as e:
             # Don't let a single failed turn (bad tool call, parse error, etc.) kill the whole connection
             print(f"Error while generating response: {e}")
@@ -53,9 +58,9 @@ async def handler(websocket):
         await websocket.send(complete_answer)
 
 
-def _collect_agent_response(question):
+def _collect_agent_response(question, thread_id):
     complete_answer = ""
-    for token in agent.stream_invoke(question):
+    for token in agent.stream_invoke(question, thread_id=thread_id):
         message_token = agent.get_ai_message_token(token)
         if message_token is not None:
             complete_answer += message_token

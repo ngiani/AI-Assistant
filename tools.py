@@ -195,7 +195,8 @@ class CalendarTools(Tools):
             self._add_recurrent_event_to_calendar_tool(),
             self._get_upcoming_events_tool(),
             self._modify_event_tool(),
-            self._get_events_on_date_tool()
+            self._get_events_on_date_tool(),
+            self._remove_event_tool()
         ]
 
     def _add_event_to_calendar_impl(self, event_name: str, 
@@ -433,7 +434,7 @@ class CalendarTools(Tools):
         for event in events:
             start = event['start'].get('dateTime', event['start'].get('date'))
             end = event['end'].get('dateTime', event['end'].get('date'))
-            event_list.append(f"{start} - {end} - {event['summary']}")
+            event_list.append(f"{start} - {end} - {event['summary']} - ID: {event['id']}")
         
         return "\n".join(event_list)
     
@@ -474,9 +475,13 @@ class CalendarTools(Tools):
     def _get_events_on_date_tool(self):
         """Creates a tool wrapper for retrieving events on a specific date from the calendar."""
         @tool
-        def get_events_on_date(date: str) -> str:
-            """Retrieves events on a specific date from the calendar."""
-            return self._get_events_on_date_impl(date)
+        def get_events_on_date(date: str, current_date: str = None) -> str:
+            """Retrieves events on a specific date from the calendar. date must be YYYY-MM-DD. ALWAYS call
+            get_current_time first (including for 'today') and pass its result as current_date
+            ('YYYY-MM-DD HH:MM:SS') so relative references like 'today'/'tomorrow' resolve correctly - never assume
+            today's date from memory."""
+            resolved_date = resolve_relative_date(date, current_date)
+            return self._get_events_on_date_impl(resolved_date)
         return get_events_on_date
     
     def _modify_event_impl(self, event_id: str, summary: str = None, description: str = None, location: str = None, 
@@ -546,6 +551,79 @@ class CalendarTools(Tools):
                                             resolved_start, resolved_end, time_zone,
                                             email_reminder, popup_reminder)
         return modify_event
+
+    def _remove_event_impl(self, event_id: str = None, summary: str = None, date: str = None) -> str:
+        """Implementation for removing an event from the calendar, either directly by event_id, or by searching
+        deterministically (in code, not via the LLM) for an event whose summary matches, optionally scoped to a
+        specific date. This avoids relying on the model to visually match names in a list, which is unreliable."""
+        if event_id:
+            try:
+                self.calendar_service.events().delete(calendarId='primary', eventId=event_id).execute()
+                return f"Event {event_id} removed."
+            except Exception as error:
+                return f"An error occurred: {error}"
+
+        if not summary:
+            return "Error: provide either event_id, or summary (optionally with date) to identify the event to remove."
+
+        try:
+            if date:
+                events_result = self.calendar_service.events().list(calendarId='primary',
+                                                                    timeMin=f"{date}T00:00:00Z",
+                                                                    timeMax=f"{date}T23:59:59Z",
+                                                                    singleEvents=True,
+                                                                    orderBy='startTime').execute()
+            else:
+                now = datetime.today().isoformat() + 'Z'  # 'Z' indicates UTC time
+                events_result = self.calendar_service.events().list(calendarId='primary', timeMin=now,
+                                                                    maxResults=50, singleEvents=True,
+                                                                    orderBy='startTime').execute()
+            events = events_result.get('items', [])
+        except Exception as error:
+            return f"An error occurred while searching for the event: {error}"
+
+        scope = f" on {date}" if date else ""
+        if not events:
+            return f"No events found{scope}."
+
+        summary_query = summary.strip().lower()
+        exact_matches = [e for e in events if e.get('summary', '').strip().lower() == summary_query]
+        partial_matches = [e for e in events if summary_query in e.get('summary', '').strip().lower()]
+        matches = exact_matches or partial_matches
+
+        if not matches:
+            return f"No event found matching '{summary}'{scope}."
+
+        if len(matches) > 1:
+            listing = "\n".join(
+                f"{e['start'].get('dateTime', e['start'].get('date'))} - {e['summary']} - ID: {e['id']}"
+                for e in matches
+            )
+            return (f"Multiple events match '{summary}'{scope}. Ask the user which one, then call remove_event "
+                    f"again with the exact event_id:\n{listing}")
+
+        match = matches[0]
+        try:
+            self.calendar_service.events().delete(calendarId='primary', eventId=match['id']).execute()
+            start = match['start'].get('dateTime', match['start'].get('date'))
+            return f"Event '{match['summary']}' ({start}) removed."
+        except Exception as error:
+            return f"An error occurred: {error}"
+
+    def _remove_event_tool(self):
+        """Creates a tool wrapper for removing an event from the calendar."""
+        @tool
+        def remove_event(event_id: str = None, summary: str = None, date: str = None, current_date: str = None) -> str:
+            """Removes an event from the calendar. Preferred: pass summary (the event's name/title as the user said
+            it) and, if the user mentioned one, date (YYYY-MM-DD - resolve relative references like 'today' by
+            calling get_current_time first and passing its result as current_date). The matching event is found
+            deterministically and deleted automatically if there's exactly one match; if there are multiple matches
+            you'll get a list of candidates with their event_id to ask the user about; if there's no match you'll be
+            told so - never guess or delete an unrelated event. Alternatively, if you already know the exact
+            event_id (e.g. the user gave it, or a previous tool call returned it), pass that instead."""
+            resolved_date = resolve_relative_date(date, current_date) if date else None
+            return self._remove_event_impl(event_id, summary, resolved_date)
+        return remove_event
  
 class MailTools(Tools):
     def __init__(self):

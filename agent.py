@@ -93,18 +93,20 @@ class Agent():
         except Exception as e:
             raise RuntimeError(f"Failed to verify or pull Ollama model '{model}': {e}") from e
         
-    def invoke(self, user_input):
+    def invoke(self, user_input, thread_id=None):
         
-                
+        thread_id = thread_id or str(uuid.uuid4())
         response = self.agent.invoke({"messages": [HumanMessage(content=user_input)]},
-                                     {"configurable": {"thread_id": str(uuid.uuid4())}})
+                                     {"configurable": {"thread_id": thread_id}})
         
         return response
     
-    def stream_invoke(self, user_input):
-                
+    def stream_invoke(self, user_input, thread_id=None):
+        # Reuse the same thread_id across a conversation (e.g. one per websocket connection) so the
+        # checkpointer keeps prior turns in context; otherwise every call starts a blank, isolated conversation.
+        thread_id = thread_id or str(uuid.uuid4())
         for token in self.agent.stream({"messages": [HumanMessage(content=user_input)]}, 
-                                        {"configurable": {"thread_id": str(uuid.uuid4())}}, 
+                                        {"configurable": {"thread_id": thread_id}}, 
                                         stream_mode="messages"):
             yield token
             
