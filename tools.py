@@ -130,14 +130,14 @@ class FileSystemTools(Tools):
 class TimeTools(Tools):
     
     def get_current_time_impl(self) -> str:
-        """Returns the current system time as a string in local timezone."""
+        """Returns the current time as a string in Rome time (container clock may not be Rome-local)."""
         from_zone = tz.tzutc()
-        to_zone = tz.tzlocal()
+        to_zone = tz.gettz("Europe/Rome")
         
         # Get current UTC time as a datetime object with UTC timezone info
         utc_time = datetime.now(from_zone)
         
-        # Convert to local timezone
+        # Convert to Rome timezone
         local_time = utc_time.astimezone(to_zone)
         
         # Return as formatted string
@@ -248,16 +248,13 @@ class CalendarTools(Tools):
                                 event_desc:str, 
                                 event_start_date: str, 
                                 event_end_date:str,
-                                time_zone:str = "UTC",
+                                time_zone:str = "Europe/Rome",
                                 email_remainder:int = 0,
                                 popup_remainder:int = 0,
                                 current_date: str = None) -> str:
-            """Adds an event to the calendar. 
-            IMPORTANT: If the user mentions relative dates like 'tomorrow', 'today', 'next week', 'next month', etc.,
-            you MUST first call get_current_time tool to get the current date and time, then pass that result to 
-            the current_date parameter of this function.
-            current_date should be in format 'YYYY-MM-DD HH:MM:SS' (e.g., from get_current_time output).
-            event_start_date and event_end_date should be in ISO format (e.g., '2024-01-15T10:00:00')."""
+            """Adds a one-time event to the calendar. For relative dates ('tomorrow', 'next week'), call get_current_time
+            first and pass its result as current_date ('YYYY-MM-DD HH:MM:SS'). Dates must be ISO format with time,
+            e.g. '2024-01-15T10:00:00'."""
             # Resolve relative dates using the provided current_date
             resolved_start = resolve_relative_date(event_start_date, current_date)
             resolved_end = resolve_relative_date(event_end_date, current_date)
@@ -391,37 +388,13 @@ class CalendarTools(Tools):
                                             recurrence_rule: str,
                                             event_location: str = "",
                                             event_desc: str = "",
-                                            time_zone: str = "UTC",
+                                            time_zone: str = "Europe/Rome",
                                             email_remainder: int = 0,
                                             popup_remainder: int = 0,
                                             current_date: str = None) -> str:
-            """Adds a recurring event to the calendar with recurrence_rule parameter.
-            
-            *** PARAMETER NAMES ARE CRITICAL - USE EXACTLY AS SHOWN ***
-            
-            REQUIRED PARAMETERS:
-            - event_name (string): Name/title of event (e.g. "Team Meeting")
-            - event_start_date (string): ISO datetime like "2026-01-20T19:00:00"
-            - event_end_date (string): ISO datetime like "2026-01-20T20:00:00"  
-            - recurrence_rule (string): RRULE like "FREQ=WEEKLY;BYDAY=TU"
-            
-            OPTIONAL PARAMETERS:
-            - event_location (string): Location of event
-            - event_desc (string): Description
-            - time_zone (string): Default is "UTC"
-            - email_remainder (int): Minutes for email reminder (1440=1 day)
-            - popup_remainder (int): Minutes for popup reminder (1440=1 day)
-            
-            RRULE EXAMPLES:
-            - "FREQ=WEEKLY;BYDAY=TU" → Every Tuesday
-            - "FREQ=DAILY" → Every day
-            - "FREQ=WEEKLY;BYDAY=MO,WE,FR" → Mon, Wed, Fri each week
-            - "FREQ=MONTHLY" → Monthly
-            - "FREQ=WEEKLY;BYDAY=TU;COUNT=10" → 10 occurrences on Tuesdays
-            
-            PARAMETER NAME REMINDER: It is "recurrence_rule" not "recurrence" or "frequency"
-            WKST RULE: Do NOT include WKST parameter - it causes API errors
-            DATE FORMAT: Must be ISO format with time (YYYY-MM-DDTHH:MM:SS)"""
+            """Adds a recurring event using recurrence_rule (e.g. 'FREQ=WEEKLY;BYDAY=TU'; no WKST). For relative dates,
+            call get_current_time first and pass its result as current_date ('YYYY-MM-DD HH:MM:SS'). Dates must be
+            ISO format with time, e.g. '2026-01-20T19:00:00'."""
             
             # Validate and normalize recurrence rule
             is_valid, result = self._validate_and_normalize_rrule(recurrence_rule)
@@ -526,7 +499,7 @@ class CalendarTools(Tools):
             
             # Update date/time fields
             if start_date or end_date or time_zone:
-                tz = time_zone or event.get('start', {}).get('timeZone', 'UTC')
+                tz = time_zone or event.get('start', {}).get('timeZone', 'Europe/Rome')
                 if start_date:
                     event['start'] = {
                         'dateTime': start_date,
@@ -562,13 +535,9 @@ class CalendarTools(Tools):
         def modify_event(event_id: str, summary: str = None, description: str = None, location: str = None,
                         start_date: str = None, end_date: str = None, time_zone: str = None,
                         email_reminder: int = None, popup_reminder: int = None, current_date: str = None) -> str:
-            """Modifies an event in the calendar. Provide the event ID and the fields you want to update.
-            IMPORTANT: If the user mentions relative dates like 'tomorrow', 'today', 'next week', 'next month', etc.,
-            you MUST first call get_current_time tool to get the current date and time, then pass that result to
-            the current_date parameter of this function.
-            current_date should be in format 'YYYY-MM-DD HH:MM:SS' (e.g., from get_current_time output).
-            start_date and end_date should be in ISO format (e.g., '2024-01-15T10:00:00'). 
-            email_reminder and popup_reminder should be in minutes."""
+            """Modifies an event in the calendar; provide event_id and only the fields to update. For relative dates,
+            call get_current_time first and pass its result as current_date ('YYYY-MM-DD HH:MM:SS'). start_date/end_date
+            must be ISO format with time; reminders are in minutes."""
             # Resolve relative dates using the provided current_date
             resolved_start = resolve_relative_date(start_date, current_date) if start_date else None
             resolved_end = resolve_relative_date(end_date, current_date) if end_date else None

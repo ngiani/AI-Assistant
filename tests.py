@@ -380,6 +380,28 @@ class TestAgent(TestCase):
             }
             
             self.assertIn("Test response", mock_agent_instance.invoke.return_value['messages'][0].content)
+
+    def test_model_pull_if_missing(self):
+        with patch('agent.ollama.Client') as mock_client_cls, patch('agent.ChatOllama') as mock_chat_ollama, patch('agent.create_agent') as mock_create_agent:
+            mock_client = mock_client_cls.return_value
+            mock_client.list.side_effect = [MagicMock(models=[MagicMock(model="other-model")]), MagicMock(models=[MagicMock(model="qwen3:8b")])]
+            mock_client.pull.return_value = [MagicMock(message="Pulling part 1"), MagicMock(message="Pull complete")]
+
+            Agent(model="qwen3:8b", tools=[], system_prompt="test")
+
+            self.assertEqual(mock_client.list.call_count, 2)
+            mock_client.pull.assert_called_once_with("qwen3:8b", stream=True)
+
+    def test_model_not_pulled_if_present(self):
+        with patch('agent.ollama.Client') as mock_client_cls, patch('agent.ChatOllama') as mock_chat_ollama, patch('agent.create_agent') as mock_create_agent:
+            mock_client = mock_client_cls.return_value
+            mock_client.list.return_value = MagicMock(models=[MagicMock(model="qwen3:8b")])
+            mock_client.pull.return_value = MagicMock()
+
+            Agent(model="qwen3:8b", tools=[], system_prompt="test")
+
+            mock_client.list.assert_called_once()
+            mock_client.pull.assert_not_called()
             
     def test_stream_invoke(self):
         with patch('agent.create_agent') as mock_create_agent:

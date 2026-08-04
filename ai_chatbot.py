@@ -24,7 +24,8 @@ def load_system_prompt():
 
 
 async def main():
-    async with serve(handler, "", port) as server:
+    # Longer ping timeout so slow (blocking) agent responses don't get treated as a dead connection
+    async with serve(handler, "", port, ping_interval=30, ping_timeout=120) as server:
         await server.serve_forever()
         
 async def handler(websocket):
@@ -40,18 +41,25 @@ async def handler(websocket):
         print(f"User: {question}")
 
         print(f"{name}:")
-        
-        complete_answer= ""
 
-        for token in agent.stream_invoke(question):
-            
-            message_token = agent.get_ai_message_token(token)
+        # Run the blocking generation in a thread so the event loop stays free to answer keepalive pings
+        try:
+            complete_answer = await asyncio.to_thread(_collect_agent_response, question)
+        except Exception as e:
+            # Don't let a single failed turn (bad tool call, parse error, etc.) kill the whole connection
+            print(f"Error while generating response: {e}")
+            complete_answer = "Sorry, something went wrong while processing that request. Please try again."
 
-            if message_token is not None:
-                complete_answer += message_token
-    
+        await websocket.send(complete_answer)
 
-        websocket.send(complete_answer)
+
+def _collect_agent_response(question):
+    complete_answer = ""
+    for token in agent.stream_invoke(question):
+        message_token = agent.get_ai_message_token(token)
+        if message_token is not None:
+            complete_answer += message_token
+    return complete_answer
         
 
 if __name__ == "__main__":
